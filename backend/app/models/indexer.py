@@ -1,14 +1,14 @@
 from pydantic import BaseModel
 
 
-class NewRepoCredentials(BaseModel):
+class NewRepoCredentialsModel(BaseModel):
     name: str = ""
     username: str = ""
     password: str = ""
     token: str = ""  # Example GitHub token
 
 
-class RepoCredentials(BaseModel):
+class RepoCredentialsModel(BaseModel):
     id: str
     name: str
     username: str
@@ -16,15 +16,17 @@ class RepoCredentials(BaseModel):
     token: str
 
 
-class CreateNewRepo(BaseModel):
+class CreateNewRepoModel(BaseModel):
     url: str = "http://example.com/repo.git"
+    branch: str = "main"
     name: str = "example-repo"
     credentials_name: str = ""  # Optional credentials name
 
 
-class Repository(BaseModel):
+class RepositoryModel(BaseModel):
     id: str | None
     url: str | None
+    branch: str | None
     name: str | None
     indexed_at: str | None  # ISO formatted datetime string
     updated_at: str | None  # ISO formatted datetime string
@@ -32,9 +34,17 @@ class Repository(BaseModel):
 
 
 class ReposResponse(BaseModel):
-    repos: list[Repository] = []
+    repos: list[RepositoryModel] = []
 
 
-class IndexerResponse(BaseModel):
+class IndexerResponseModel(BaseModel):
     status: int
     message: str
+
+
+class IndexModel(BaseModel):
+    id: str
+    repo_id: str
+    compose_path: str
+    indexed_at: str | None  # ISO formatted datetime string
+    updated_at: str | None  # ISO formatted datetime string

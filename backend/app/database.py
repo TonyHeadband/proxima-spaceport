@@ -1,4 +1,4 @@
-from sqlalchemy import create_engine, UniqueConstraint, String, DateTime, LargeBinary
+from sqlalchemy import create_engine, UniqueConstraint, String, DateTime, LargeBinary, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base, mapped_column
 
 from uuid import uuid4
@@ -35,17 +35,19 @@ class Repos(BaseTable):
                        default=lambda: str(uuid4()))
     url = mapped_column(String, index=True)
     name = mapped_column(String, index=True)
+    branch = mapped_column(String, default="main")
     credentials_name = mapped_column(String)
     indexed_at = mapped_column(DateTime)  # ISO formatted datetime string
     updated_at = mapped_column(DateTime)  # ISO formatted datetime string
 
     __table_args__ = (UniqueConstraint(
-        'url', 'name', name='_id_url_name_uc'),)
+        'name', 'url', 'branch', name='_id_name_url_branch_uc'),)
 
     def as_dict(self) -> dict[str, str | None]:
         return {
             "id": self.id,
             "url": self.url,
+            "branch": self.branch,
             "name": self.name,
             "credentials_name": self.credentials_name,
             "indexed_at": self.indexed_at.isoformat() if self.indexed_at else None,
@@ -65,3 +67,22 @@ class Credentials(BaseTable):
 
     __table_args__ = (UniqueConstraint(
         'name', 'username', name='_id_name_username_uc'),)
+
+
+class IndexModel(BaseTable):
+    __tablename__ = "index"
+
+    id = mapped_column(String, primary_key=True, index=True,
+                       default=lambda: str(uuid4()))
+    repo_id = mapped_column(String, ForeignKey("repos.id"), index=True)
+    compose_path = mapped_column(String)
+    indexed_at = mapped_column(DateTime)  # ISO formatted datetime string
+    updated_at = mapped_column(DateTime)  # ISO formatted datetime string
+
+    def as_dict(self) -> dict[str, str | None]:
+        return {
+            "id": self.id,
+            "repo_id": self.repo_id,
+            "indexed_at": self.indexed_at.isoformat() if self.indexed_at else None,
+            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+        }
