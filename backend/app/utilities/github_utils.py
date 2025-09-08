@@ -8,6 +8,9 @@ from models.indexer import RepositoryModel, RepoCredentialsModel, NewIndexEntryM
 
 def get_github_instance_by_token(credentials: RepoCredentialsModel, auth_key: bytes) -> Github:
     try:
+        if not credentials.token:
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="No token found in credentials")
         fernet = Fernet(auth_key)
         decrypted_token = fernet.decrypt(credentials.token).decode('utf-8')
         auth = Auth.Token(decrypted_token)
