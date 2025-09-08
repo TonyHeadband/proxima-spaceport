@@ -80,5 +80,3 @@ This project is licensed under the MIT License.
 ## 🌍 Links
 
 - [Project Repository](https://github.com/TonyHeadband/proxima-spaceport)
-
-If you want to add badges (build status, license, etc.), screenshots, or a demo section, I can help you extend it further. Just say the word.
