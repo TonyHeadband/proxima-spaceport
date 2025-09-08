@@ -15,7 +15,8 @@ dependencies = [
     "sqlalchemy>=2.0.0",
     "databases[sqlite]>=0.7.0",
     "pygithub>=2.8.1",
-    "bcrypt>=4.3.0"
+    "bcrypt>=4.3.0",
+    "cryptography>=45.0.7"
 ]
 
 [project.optional-dependencies]

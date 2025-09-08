@@ -1,14 +1,13 @@
-from api.routes.api import router as api_router
-from core.config import API_PREFIX, DEBUG, PROJECT_NAME, VERSION
-from fastapi import FastAPI, status
-
+import os
 from contextlib import asynccontextmanager
 
-from fastapi.middleware.cors import CORSMiddleware
-
-from database import Database
-
+from api.routes.api import router as api_router
+from core.config import API_PREFIX, DEBUG, PROJECT_NAME, VERSION
 from core.errors import DatabaseException
+from database import Database
+from dependencies import init_cryptography_key
+from fastapi import FastAPI, status
+from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
@@ -19,16 +18,19 @@ async def lifespan_manager(app: FastAPI):
     except DatabaseException:
         raise RuntimeError("Failed to connect to the database")
 
+    app.state.auth_key = init_cryptography_key(app)
+    if not app.state.auth_key:
+        raise RuntimeError("Failed to initialize encryption key")
+
+    print(f"DEV mode:{os.getenv('DEV')}")
+
     yield
 
-    # write here post shutdown code
+    app.state.db.engine.dispose()
 
 
 app = FastAPI(
-    title=PROJECT_NAME,
-    version=VERSION,
-    debug=DEBUG,
-    lifespan=lifespan_manager
+    title=PROJECT_NAME, version=VERSION, debug=DEBUG, lifespan=lifespan_manager
 )
 
 

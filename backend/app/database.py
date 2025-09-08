@@ -1,3 +1,4 @@
+import os
 from sqlalchemy import create_engine, UniqueConstraint, String, DateTime, LargeBinary, ForeignKey
 from sqlalchemy.orm import sessionmaker, declarative_base, mapped_column
 
@@ -36,6 +37,7 @@ class Repos(BaseTable):
     url = mapped_column(String, index=True)
     name = mapped_column(String, index=True)
     branch = mapped_column(String, default="main")
+    compose_folder = mapped_column(String, nullable=True)
     credentials_name = mapped_column(String)
     indexed_at = mapped_column(DateTime)  # ISO formatted datetime string
     updated_at = mapped_column(DateTime)  # ISO formatted datetime string
@@ -43,15 +45,16 @@ class Repos(BaseTable):
     __table_args__ = (UniqueConstraint(
         'name', 'url', 'branch', name='_id_name_url_branch_uc'),)
 
-    def as_dict(self) -> dict[str, str | None]:
+    def as_dict(self) -> dict[str, str]:
         return {
             "id": self.id,
             "url": self.url,
             "branch": self.branch,
             "name": self.name,
+            "compose_folder": self.compose_folder,
             "credentials_name": self.credentials_name,
-            "indexed_at": self.indexed_at.isoformat() if self.indexed_at else None,
-            "updated_at": self.updated_at.isoformat() if self.updated_at else None,
+            "indexed_at": self.indexed_at.isoformat() if self.indexed_at else "",
+            "updated_at": self.updated_at.isoformat() if self.updated_at else "",
         }
 
 
@@ -69,7 +72,7 @@ class Credentials(BaseTable):
         'name', 'username', name='_id_name_username_uc'),)
 
 
-class IndexModel(BaseTable):
+class Index(BaseTable):
     __tablename__ = "index"
 
     id = mapped_column(String, primary_key=True, index=True,
@@ -86,3 +89,9 @@ class IndexModel(BaseTable):
             "indexed_at": self.indexed_at.isoformat() if self.indexed_at else None,
             "updated_at": self.updated_at.isoformat() if self.updated_at else None,
         }
+
+
+class Auth(BaseTable):
+    __tablename__ = "auth"
+
+    key = mapped_column(LargeBinary, primary_key=True)
