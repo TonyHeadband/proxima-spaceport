@@ -3,7 +3,7 @@ from dependencies import get_db, get_cryptography_key
 
 from sqlalchemy.orm import Session
 
-from models.indexer import IndexerResponseModel, ReposResponse
+from models.indexer import IndexerResponseModel, RepositoryModel
 from models.indexer import CreateNewRepoModel, RepoCredentialsModel, NewRepoCredentialsModel
 
 from services.indexer import create_new_repo, list_repositories
@@ -36,13 +36,13 @@ async def add_repo(new_repo: CreateNewRepoModel, db: Session = Depends(get_db)) 
     "/repos",
     name="indexer:list-repos",
 )
-async def list_repos(db: Session = Depends(get_db)):
+async def list_repos(db: Session = Depends(get_db)) -> list[RepositoryModel]:
     """
     List all indexed repositories.
     """
     repos = list_repositories(db)
 
-    return ReposResponse(repos=repos)
+    return repos
 
 
 @router.post(

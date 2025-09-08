@@ -35,10 +35,6 @@ class RepositoryModel(BaseModel):
     credentials_name: str | None = None  # Optional credentials name
 
 
-class ReposResponse(BaseModel):
-    repos: list[RepositoryModel] = []
-
-
 class IndexerResponseModel(BaseModel):
     status: int
     message: str
