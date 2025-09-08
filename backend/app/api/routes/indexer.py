@@ -103,7 +103,7 @@ async def get_index(db: Session = Depends(get_db)) -> list[dict[str, str | None]
 )
 async def update_index(force: bool = False, db: Session = Depends(get_db), auth_key: bytes = Depends(get_cryptography_key)) -> IndexerResponseModel:
     """
-    Trigger re-indexing of all repositories.
+    Trigger re-indexing of all repositories. the force parameter is not used at the moment.
     """
     if db.query(Repos).count() == 0:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,

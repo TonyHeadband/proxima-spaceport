@@ -92,8 +92,16 @@ def get_index_values(db: Session) -> list[dict[str, str | None]]:
     return [entry.as_dict() for entry in db.query(Index).all()]
 
 
+def validate_uniqueness_index_entry(repo_id: int, db: Session) -> bool:
+    existing_index = db.query(Index).filter(Index.repo_id == repo_id).first()
+    return existing_index is None
+
+
 def fetch_index_new_entries(db: Session, auth_key: bytes) -> Iterator[NewIndexEntryModel]:
     for entry in db.query(Repos).all():
+        if not validate_uniqueness_index_entry(entry.id, db):
+            continue
+
         cred = None
         if entry.credentials_name:
             cred = get_credentials_by_name(entry.credentials_name, db)
