@@ -1,0 +1,176 @@
+.contentPanel h2 {
+    margin-top: 0;
+}
+
+.contentPanel {
+    color: #e6eef6;
+    flex: 1 1 auto;
+    min-height: 0;
+    overflow: auto;
+}
+
+.tableWrap {
+    width: 100%;
+    overflow: auto;
+    border-radius: 6px;
+    background: rgba(255, 255, 255, 0.02);
+    padding: 8px;
+}
+
+.repoTable {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.95rem;
+    table-layout: fixed;
+    /* prevent column width changes when inline inputs appear */
+}
+
+.nameCell {
+    width: 250px;
+    min-width: 100px;
+    max-width: 340px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.urlCell {
+    width: 400px;
+    min-width: 180px;
+    max-width: 450px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.branchCell {
+    width: 110px;
+}
+
+.composeCell {
+    width: 140px;
+}
+
+.indexedAtCell,
+.updatedAtCell {
+    width: 150px;
+    max-width: 150px;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.credentialsCell {
+    width: 160px;
+}
+
+.actionsCell {
+    width: 160px;
+}
+
+.repoTable th,
+.repoTable td {
+    text-align: left;
+    padding: 10px 14px;
+    border-bottom: 1px solid rgba(255, 255, 255, 0.04);
+    vertical-align: middle;
+    min-width: 0;
+    /* allow cells to shrink inside a fixed-layout table */
+}
+
+.actionsShown .repoTable th,
+.actionsShown .repoTable td {
+    padding-top: 12px;
+    padding-bottom: 12px;
+}
+
+.repoTable th,
+.repoTable td {
+    transition: padding 180ms ease;
+}
+
+.repoTable thead th {
+    color: #bcd3ea;
+    font-weight: 600;
+}
+
+.actionArea {
+    align-items: flex-start;
+    min-height: 30px;
+    align-items: stretch;
+}
+
+.actionButton {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 12px 16px;
+    border-radius: 8px;
+    cursor: pointer;
+    text-align: center;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.actionButtonVar01 {
+    margin-bottom: 10px;
+    background: #25c3eb;
+    color: #fff;
+}
+
+.rowActions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.newRowActions {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.smallButton {
+    min-width: 50px;
+    display: inline-flex !important;
+    padding: 6px 10px !important;
+    font-size: 0.9rem;
+}
+
+.warningButton {
+    background: #dc2626;
+    /* red */
+    color: #fff;
+}
+
+.smallButton01 {
+    background: #dc8426;
+    min-width: 50px;
+    display: inline-flex !important;
+    padding: 6px 10px !important;
+    font-size: 0.9rem;
+}
+
+.inlineInput {
+    width: 100%;
+    box-sizing: border-box;
+    min-width: 0;
+    padding: 6px 8px;
+    border-radius: 6px;
+    border: 1px solid rgba(255, 255, 255, 0.06);
+    background: rgba(255, 255, 255, 0.02);
+    color: inherit;
+}
+
+.fieldError {
+    color: #fca5a5;
+    font-size: 0.85rem;
+    margin-top: 4px;
+}
+
+.newRow {
+    background: rgba(255, 255, 255, 0.01);
+}
