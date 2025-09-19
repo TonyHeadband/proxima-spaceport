@@ -187,6 +187,16 @@ cython_debug/
 #  and can be added to the global gitignore or merged into this file. However, if you prefer, 
 #  you could uncomment the following to ignore the entire vscode folder
 .vscode/
+!.vscode/extensions.json
+
+# Editor directories and files
+.idea
+.DS_Store
+*.suo
+*.ntvs*
+*.njsproj
+*.sln
+*.sw?
 
 # Ruff stuff:
 .ruff_cache/
@@ -208,3 +218,23 @@ __marimo__/
 
 # Application specific ignores
 *.db
+
+# temp folder
+temp/
+
+# Entries from frontend/.gitignore
+logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+node_modules
+dist
+dist-ssr
+*.local
+
+# Vite cache (frontend dev)
+.vite/
