@@ -1,12 +1,13 @@
-import os
 from sqlalchemy import create_engine, UniqueConstraint, String, DateTime, LargeBinary, ForeignKey
-from sqlalchemy.orm import sessionmaker, declarative_base, mapped_column
+from sqlalchemy.orm import sessionmaker, mapped_column, DeclarativeBase
 
 from uuid import uuid4
 
 DATABASE_URL = "sqlite:///./database.db"
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 class Database:
