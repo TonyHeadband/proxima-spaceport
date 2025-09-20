@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from models.indexer import IndexerResponseModel, RepositoryModel
 from models.indexer import CreateNewRepoModel, RepoCredentialsModel, NewRepoCredentialsModel
 
-from services.indexer import create_new_repo, list_repositories, update_repo, get_repo_by_id
+from services.indexer import create_new_repo, list_repositories, update_repo
 from services.indexer import create_new_credentials, get_all_credentials
 from services.indexer import get_index_values, rescan_index_values
 
@@ -67,7 +67,8 @@ async def delete_repo(repo_id: str, db: Session = Depends(get_db)) -> IndexerRes
     """
     Delete a repository from the index.
     """
-    existing_repo = await get_repo_by_id(repo_id, db)
+    # fetch ORM instance directly for deletion
+    existing_repo = db.query(Repos).filter(Repos.id == repo_id).first()
     if not existing_repo:
         raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
                             detail="RepositoryModel not found")
@@ -111,8 +112,11 @@ async def add_credentials(credentials: NewRepoCredentialsModel, db: Session = De
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                             detail="Password or token is required")
 
-    create_new_credentials(
-        credentials.name, credentials.username, credentials.password, credentials.token, db, auth_key)
+    try:
+        await create_new_credentials(
+            credentials.name, credentials.username, credentials.password, credentials.token, db, auth_key)
+    except HTTPException as exc:
+        raise exc
 
     return IndexerResponseModel(status=status.HTTP_200_OK, message="Credentials added successfully")
 
@@ -125,7 +129,7 @@ async def get_credentials(db: Session = Depends(get_db)) -> list[RepoCredentials
     """
     List all stored credentials.
     """
-    return get_all_credentials(db)
+    return await get_all_credentials(db)
 
 
 @router.get(
@@ -137,7 +141,7 @@ async def get_index(db: Session = Depends(get_db)) -> list[dict[str, str | None]
     Get indexing information for a specific repository.
     """
     try:
-        values = get_index_values(db)
+        values = await get_index_values(db)
     except HTTPException as exc:
         raise exc
 
