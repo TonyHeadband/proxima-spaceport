@@ -1,6 +1,7 @@
 from pydantic import BaseModel
 
 from datetime import datetime
+from typing import Any
 
 
 class NewRepoCredentialsModel(BaseModel):
@@ -36,7 +37,7 @@ class RepositoryModel(BaseModel):
     updated_at: datetime | None
     credentials_name: str | None = None  # Optional credentials name
 
-    def __init__(self, **data):
+    def __init__(self, **data: Any) -> None:
         for key in ("indexed_at", "updated_at"):
             val = data.get(key)
             if isinstance(val, str):
@@ -48,7 +49,7 @@ class RepositoryModel(BaseModel):
                     data[key] = datetime.fromisoformat(s)
                 except Exception:
                     data[key] = None
-        super().__init__(**data)
+        super(RepositoryModel, self).__init__(**data)
 
 
 class IndexerResponseModel(BaseModel):

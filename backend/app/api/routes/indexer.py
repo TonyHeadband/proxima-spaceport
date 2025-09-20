@@ -90,7 +90,8 @@ async def list_repos(db: Session = Depends(get_db)) -> list[RepositoryModel]:
     """
     List all indexed repositories.
     """
-    return await list_repositories(db)
+    repos: list[RepositoryModel] = await list_repositories(db)
+    return repos
 
 
 @router.post(
@@ -129,7 +130,8 @@ async def get_credentials(db: Session = Depends(get_db)) -> list[RepoCredentials
     """
     List all stored credentials.
     """
-    return await get_all_credentials(db)
+    creds: list[RepoCredentialsModel] = await get_all_credentials(db)
+    return creds
 
 
 @router.get(
@@ -141,7 +143,7 @@ async def get_index(db: Session = Depends(get_db)) -> list[dict[str, str | None]
     Get indexing information for a specific repository.
     """
     try:
-        values = await get_index_values(db)
+        values: list[dict[str, str | None]] = await get_index_values(db)
     except HTTPException as exc:
         raise exc
 

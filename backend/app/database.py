@@ -3,6 +3,7 @@ from sqlalchemy.orm import sessionmaker, mapped_column, DeclarativeBase
 from sqlalchemy.orm import Session
 
 from uuid import uuid4
+from typing import Any
 
 DATABASE_URL = "sqlite:///./database.db"
 
@@ -27,7 +28,7 @@ class Database:
 class BaseTable(Base):
     __abstract__ = True
 
-    def as_dict(self):
+    def as_dict(self) -> dict[str, Any]:
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 

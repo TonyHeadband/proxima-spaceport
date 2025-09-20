@@ -1,5 +1,6 @@
 import os
 from contextlib import asynccontextmanager
+from collections.abc import AsyncGenerator
 
 from api.routes.api import router as api_router
 from core.config import API_PREFIX, DEBUG, PROJECT_NAME, VERSION
@@ -11,7 +12,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 
 @asynccontextmanager
-async def lifespan_manager(app: FastAPI):
+async def lifespan_manager(app: FastAPI) -> AsyncGenerator[None, None]:
     """Lifespan manager to handle startup and shutdown events."""
     try:
         app.state.db = Database()
@@ -45,5 +46,5 @@ app.include_router(api_router, prefix=API_PREFIX)
 
 
 @app.get("/health", status_code=status.HTTP_200_OK)
-async def health_check():
+async def health_check() -> dict[str, int]:
     return {"status": 200}

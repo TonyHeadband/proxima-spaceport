@@ -43,7 +43,19 @@ def fetch_compose_path(repo: RepositoryModel, credentials: RepoCredentialsModel 
     try:
         gh_repo = gh_instance.get_repo(repo.name)
         file_content = gh_repo.get_contents(path, ref=repo.branch)
-        return file_content.decoded_content.decode('utf-8')
+        # PyGithub may return a single ContentFile or a list; handle both
+        if isinstance(file_content, list):
+            # take first item
+            content_item = file_content[0]
+        else:
+            content_item = file_content
+        # content_item is a ContentFile with decoded_content bytes
+        decoded_obj = getattr(content_item, "decoded_content", None)
+        if isinstance(decoded_obj, (bytes, bytearray)):
+            return bytes(decoded_obj).decode("utf-8")
+        # Unexpected type — treat as error
+        raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                            detail=f"Unexpected content type for {path} from repository {repo.url}")
     except UnknownObjectException:
         print(f"File {path} not found in repository {repo.url}/{repo.branch}")
         return None
