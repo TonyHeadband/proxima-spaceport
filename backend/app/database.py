@@ -1,16 +1,19 @@
-import os
 from sqlalchemy import create_engine, UniqueConstraint, String, DateTime, LargeBinary, ForeignKey
-from sqlalchemy.orm import sessionmaker, declarative_base, mapped_column
+from sqlalchemy.orm import sessionmaker, mapped_column, DeclarativeBase
+from sqlalchemy.orm import Session
 
 from uuid import uuid4
+from typing import Any
 
 DATABASE_URL = "sqlite:///./database.db"
 
-Base = declarative_base()
+
+class Base(DeclarativeBase):
+    pass
 
 
 class Database:
-    def __init__(self):
+    def __init__(self) -> None:
         self.engine = create_engine(DATABASE_URL, connect_args={
                                     "check_same_thread": False})
         self.session = sessionmaker(
@@ -18,14 +21,14 @@ class Database:
 
         Base.metadata.create_all(bind=self.engine)
 
-    def get_session(self):
+    def get_session(self) -> Session:
         return self.session()
 
 
 class BaseTable(Base):
     __abstract__ = True
 
-    def as_dict(self):
+    def as_dict(self) -> dict[str, Any]:
         return {c.name: getattr(self, c.name) for c in self.__table__.columns}
 
 

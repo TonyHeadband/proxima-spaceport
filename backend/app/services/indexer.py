@@ -144,7 +144,7 @@ async def fetch_index_new_entries(db: Session, auth_key: bytes) -> AsyncIterator
             yield new_entry
 
 
-async def rescan_index_values(force: bool, db: Session, auth_key: bytes):
+async def rescan_index_values(force: bool, db: Session, auth_key: bytes) -> None:
     new_index_entries = fetch_index_new_entries(db, auth_key)
     async for entry in new_index_entries:
         table_entry = Index(repo_id=entry.repo_id, compose_path=entry.compose_path,

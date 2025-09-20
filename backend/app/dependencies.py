@@ -1,4 +1,5 @@
 from collections.abc import Generator
+from typing import cast
 
 from cryptography.fernet import Fernet
 from database import Auth
@@ -15,8 +16,11 @@ def get_db(request: Request) -> Generator[Session, None, None]:
 
 
 def get_cryptography_key(request: Request) -> bytes | None:
-    if hasattr(request.app.state, "auth_key"):
-        return request.app.state.auth_key
+    # Use object typing so mypy can narrow via isinstance checks
+    key_obj: object = getattr(request.app.state, "auth_key", None)
+    if isinstance(key_obj, (bytes, bytearray)):
+        # normalize bytearray -> bytes
+        return bytes(key_obj)
     return None
 
 
@@ -28,8 +32,8 @@ def init_cryptography_key(app: FastAPI) -> bytes | None:
             new_key = Auth(key=Fernet.generate_key())
             session.add(new_key)
             session.commit()
-            return new_key.key
-        return key.key
+            return cast(bytes, new_key.key)
+        return cast(bytes, key.key)
     except Exception:
         session.rollback()
         raise Exception("Failed to create encryption key in database")
