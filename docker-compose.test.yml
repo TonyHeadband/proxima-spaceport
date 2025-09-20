@@ -1,0 +1,22 @@
+services:
+  backend-test:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+      args:
+        DEV: 'true'
+    image: proxima-spaceport-backend:test
+    volumes:
+      - ./backend/app:/app
+      - ./backend:/workspace
+    working_dir: /workspace
+    command: ["pytest", "-q", "tests"]
+    environment:
+      - PYTHONUNBUFFERED=1
+    # reuse the same network as other compose services if needed
+    networks:
+      - default
+
+networks:
+  default:
+    external: false

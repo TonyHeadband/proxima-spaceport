@@ -1,23 +1,26 @@
-FROM python:3.11.0
+FROM python:3.11-slim
 
-ENV PYTHONUNBUFFERED 1
+ENV PYTHONUNBUFFERED=1
 
 WORKDIR /app
 
-RUN python -m venv /opt/venv
-ENV PATH="/opt/venv/bin:$PATH"
-
+# Copy pyproject first so we can install editable package (and deps) before copying source
 COPY pyproject.toml ./
-RUN pip install --upgrade pip && \
-    pip install uv && \
-    uv pip install -e .  # Installs dependencies using uv
+
+RUN python -m pip install --upgrade pip setuptools wheel
 
 ARG DEV=false
-RUN if [ "$DEV" = "true" ] ; then uv pip install -e .[dev] ; fi
+# Install package in editable mode; include dev extras when DEV=true
+RUN if [ "$DEV" = "true" ] ; then \
+            python -m pip install -e .[dev]; \
+        else \
+            python -m pip install -e .; \
+        fi
 
+# Copy application source into the container (preserve layout used by repo)
 COPY ./app/ ./
 
-ENV PYTHONPATH "${PYTHONPATH}:/app"
+ENV PYTHONPATH="/app:${PYTHONPATH}"
 
 EXPOSE 8080
 CMD ["uvicorn", "main:app", "--host", "0.0.0.0", "--port", "8080"]

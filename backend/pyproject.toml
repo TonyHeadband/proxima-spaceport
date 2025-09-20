@@ -21,6 +21,7 @@ dependencies = [
 [project.optional-dependencies]
 dev = [
     "pytest>=7.2",
+    "httpx>=0.24",
     "black>=24.3",
     "autopep8>=2.0.0",
     "ipdb>=0.13.0",
