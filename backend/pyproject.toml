@@ -25,7 +25,8 @@ dev = [
     "black>=24.3",
     "autopep8>=2.0.0",
     "ipdb>=0.13.0",
-    "pylint>=3.0.0"
+    "pylint>=3.0.0",
+    "mypy>=1.9"
 ]
 
 [tool.black]
