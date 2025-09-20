@@ -13,7 +13,7 @@ from models.indexer import RepositoryModel, RepoCredentialsModel, NewIndexEntryM
 from utilities.github_utils import make_index_entry
 
 
-def create_new_repo(url: str, branch: str, name: str, compose_folder: str, credentials_name: str,  db: Session) -> bool:
+async def create_new_repo(url: str, branch: str, name: str, compose_folder: str, credentials_name: str,  db: Session) -> bool:
     new_repo = Repos(url=url, branch=branch, name=name, compose_folder=compose_folder, indexed_at=datetime.now(
         timezone.utc), updated_at=datetime.now(timezone.utc), credentials_name=credentials_name)
 
@@ -36,12 +36,35 @@ def create_new_repo(url: str, branch: str, name: str, compose_folder: str, crede
     return True
 
 
-def list_repositories(db: Session) -> list[RepositoryModel]:
+async def list_repositories(db: Session) -> list[RepositoryModel]:
     return [RepositoryModel(**repo.as_dict()) for repo in db.query(Repos).all()]
 
 
-def get_repo_by_id(repo_id: str, db: Session) -> RepositoryModel | None:
+async def get_repo_by_id(repo_id: str, db: Session) -> RepositoryModel | None:
     return db.query(Repos).filter(Repos.id == repo_id).first()
+
+
+async def update_repo(repo: RepositoryModel, db: Session) -> bool:
+    repo.updated_at = datetime.now(timezone.utc)
+
+    try:
+        db.add(repo)
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        if "UNIQUE constraint failed" in str(e.orig):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Unique constraint violation!")
+        else:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail="Internal server error")
+    except HTTPException:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="edit_repo failed unexpectedly")
+
+    print(f"Edited repository with id: {repo.id}")
+    return True
 
 
 def create_new_credentials(name: str, username: str, password: str, token: str, db: Session, auth_key: bytes) -> bool:

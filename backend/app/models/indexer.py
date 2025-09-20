@@ -1,5 +1,7 @@
 from pydantic import BaseModel
 
+from datetime import datetime
+
 
 class NewRepoCredentialsModel(BaseModel):
     name: str = ""
@@ -30,9 +32,23 @@ class RepositoryModel(BaseModel):
     branch: str
     name: str
     compose_folder: str | None
-    indexed_at: str | None  # ISO formatted datetime string
-    updated_at: str | None  # ISO formatted datetime string
+    indexed_at: datetime | None
+    updated_at: datetime | None
     credentials_name: str | None = None  # Optional credentials name
+
+    def __init__(self, **data):
+        for key in ("indexed_at", "updated_at"):
+            val = data.get(key)
+            if isinstance(val, str):
+                s = val
+                # support "Z" UTC marker
+                if s.endswith("Z"):
+                    s = s[:-1] + "+00:00"
+                try:
+                    data[key] = datetime.fromisoformat(s)
+                except Exception:
+                    data[key] = None
+        super().__init__(**data)
 
 
 class IndexerResponseModel(BaseModel):
