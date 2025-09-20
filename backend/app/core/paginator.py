@@ -1,6 +1,13 @@
+from typing import Any
+
+
 def pagenation(
-    page_number=1, page_size=20, total_count=0, data=None, start_page_as_1=True
-):
+    page_number: int = 1,
+    page_size: int = 20,
+    total_count: int = 0,
+    data: list[Any] | None = None,
+    start_page_as_1: bool = True,
+) -> dict[str, Any]:
     """Return payload that contains metainformations about
     pagination and listing data.
     page_number starts with 0 (array like),
@@ -23,6 +30,9 @@ def pagenation(
         end += remaining
     else:
         end += page_size
+    if data is None:
+        data = []
+
     return {
         "begin": begin,
         "end": end,
