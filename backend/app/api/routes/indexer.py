@@ -6,7 +6,7 @@ from sqlalchemy.orm import Session
 from models.indexer import IndexerResponseModel, RepositoryModel
 from models.indexer import CreateNewRepoModel, RepoCredentialsModel, NewRepoCredentialsModel
 
-from services.indexer import create_new_repo, list_repositories
+from services.indexer import create_new_repo, list_repositories, update_repo
 from services.indexer import create_new_credentials, get_all_credentials
 from services.indexer import get_index_values, rescan_index_values
 
@@ -23,13 +23,63 @@ async def add_repo(new_repo: CreateNewRepoModel, db: Session = Depends(get_db)) 
     """
     Add a new repository to be indexed.
     """
-    if not new_repo.url.startswith("http"):
-        raise HTTPException(status_code=400, detail="Invalid repository URL")
-
-    create_new_repo(new_repo.url, new_repo.branch,
-                    new_repo.name, new_repo.compose_folder, new_repo.credentials_name, db)
+    try:
+        await create_new_repo(new_repo.url, new_repo.branch,
+                              new_repo.name, new_repo.compose_folder, new_repo.credentials_name, db)
+    except HTTPException as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail)
 
     return IndexerResponseModel(status=status.HTTP_200_OK, message="RepositoryModel added successfully")
+
+
+@router.put(
+    "/repos/{repo_id}",
+    name="indexer:edit-repo",
+)
+async def edit_repo(repo_id: str, repo: CreateNewRepoModel, db: Session = Depends(get_db)) -> IndexerResponseModel:
+    """
+    Edit an existing repository to be indexed.
+
+    """
+    existing_repo = db.query(Repos).filter(Repos.id == repo_id).first()
+    if not existing_repo:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="RepositoryModel not found")
+
+    update_data = repo.model_dump()
+    for key, value in update_data.items():
+        if hasattr(existing_repo, key):
+            setattr(existing_repo, key, value)
+
+    try:
+        await update_repo(existing_repo, db)
+    except HTTPException as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail)
+
+    return IndexerResponseModel(status=status.HTTP_200_OK, message="RepositoryModel edited successfully")
+
+
+@router.delete(
+    "/repos/{repo_id}",
+    name="indexer:delete-repo",
+)
+async def delete_repo(repo_id: str, db: Session = Depends(get_db)) -> IndexerResponseModel:
+    """
+    Delete a repository from the index.
+    """
+    # fetch ORM instance directly for deletion
+    existing_repo = db.query(Repos).filter(Repos.id == repo_id).first()
+    if not existing_repo:
+        raise HTTPException(status_code=status.HTTP_404_NOT_FOUND,
+                            detail="RepositoryModel not found")
+
+    try:
+        db.delete(existing_repo)
+        db.commit()
+    except HTTPException as exc:
+        raise HTTPException(status_code=exc.status_code, detail=exc.detail)
+
+    return IndexerResponseModel(status=status.HTTP_200_OK, message="RepositoryModel deleted successfully")
 
 
 @router.get(
@@ -40,9 +90,7 @@ async def list_repos(db: Session = Depends(get_db)) -> list[RepositoryModel]:
     """
     List all indexed repositories.
     """
-    repos = list_repositories(db)
-
-    return repos
+    return await list_repositories(db)
 
 
 @router.post(
@@ -64,8 +112,11 @@ async def add_credentials(credentials: NewRepoCredentialsModel, db: Session = De
         raise HTTPException(status_code=status.HTTP_406_NOT_ACCEPTABLE,
                             detail="Password or token is required")
 
-    create_new_credentials(
-        credentials.name, credentials.username, credentials.password, credentials.token, db, auth_key)
+    try:
+        await create_new_credentials(
+            credentials.name, credentials.username, credentials.password, credentials.token, db, auth_key)
+    except HTTPException as exc:
+        raise exc
 
     return IndexerResponseModel(status=status.HTTP_200_OK, message="Credentials added successfully")
 
@@ -78,7 +129,7 @@ async def get_credentials(db: Session = Depends(get_db)) -> list[RepoCredentials
     """
     List all stored credentials.
     """
-    return get_all_credentials(db)
+    return await get_all_credentials(db)
 
 
 @router.get(
@@ -90,7 +141,7 @@ async def get_index(db: Session = Depends(get_db)) -> list[dict[str, str | None]
     Get indexing information for a specific repository.
     """
     try:
-        values = get_index_values(db)
+        values = await get_index_values(db)
     except HTTPException as exc:
         raise exc
 

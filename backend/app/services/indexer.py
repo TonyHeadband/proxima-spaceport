@@ -1,4 +1,4 @@
-from collections.abc import Iterator
+from collections.abc import AsyncIterator
 from cryptography.fernet import Fernet
 from datetime import datetime, timezone
 
@@ -13,7 +13,7 @@ from models.indexer import RepositoryModel, RepoCredentialsModel, NewIndexEntryM
 from utilities.github_utils import make_index_entry
 
 
-def create_new_repo(url: str, branch: str, name: str, compose_folder: str, credentials_name: str,  db: Session) -> bool:
+async def create_new_repo(url: str, branch: str, name: str, compose_folder: str, credentials_name: str,  db: Session) -> bool:
     new_repo = Repos(url=url, branch=branch, name=name, compose_folder=compose_folder, indexed_at=datetime.now(
         timezone.utc), updated_at=datetime.now(timezone.utc), credentials_name=credentials_name)
 
@@ -36,15 +36,40 @@ def create_new_repo(url: str, branch: str, name: str, compose_folder: str, crede
     return True
 
 
-def list_repositories(db: Session) -> list[RepositoryModel]:
+async def list_repositories(db: Session) -> list[RepositoryModel]:
+    # synchronous DB call inside async function (consider SQLAlchemy async for non-blocking)
     return [RepositoryModel(**repo.as_dict()) for repo in db.query(Repos).all()]
 
 
-def get_repo_by_id(repo_id: str, db: Session) -> RepositoryModel | None:
-    return db.query(Repos).filter(Repos.id == repo_id).first()
+async def get_repo_by_id(repo_id: str, db: Session) -> RepositoryModel | None:
+    orm_repo = db.query(Repos).filter(Repos.id == repo_id).first()
+    return RepositoryModel(**orm_repo.as_dict()) if orm_repo else None
 
 
-def create_new_credentials(name: str, username: str, password: str, token: str, db: Session, auth_key: bytes) -> bool:
+async def update_repo(repo: Repos, db: Session) -> bool:
+    repo.updated_at = datetime.now(timezone.utc)
+
+    try:
+        db.add(repo)
+        db.commit()
+    except IntegrityError as e:
+        db.rollback()
+        if "UNIQUE constraint failed" in str(e.orig):
+            raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+                                detail="Unique constraint violation!")
+        else:
+            raise HTTPException(status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+                                detail="Internal server error")
+    except HTTPException:
+        db.rollback()
+        raise HTTPException(status_code=status.HTTP_422_UNPROCESSABLE_ENTITY,
+                            detail="edit_repo failed unexpectedly")
+
+    print(f"Edited repository with id: {repo.id}")
+    return True
+
+
+async def create_new_credentials(name: str, username: str, password: str, token: str, db: Session, auth_key: bytes) -> bool:
     new_credentials = None
     encrypted_password = None
     encrypted_token = None
@@ -80,31 +105,34 @@ def create_new_credentials(name: str, username: str, password: str, token: str, 
     return True
 
 
-def get_all_credentials(db: Session) -> list[RepoCredentialsModel]:
+async def get_all_credentials(db: Session) -> list[RepoCredentialsModel]:
     return [RepoCredentialsModel(**cred.as_dict()) for cred in db.query(Credentials).all()]
 
 
-def get_credentials_by_name(credentials_name: str, db: Session) -> RepoCredentialsModel | None:
-    return db.query(Credentials).filter(Credentials.name == credentials_name).first()
+async def get_credentials_by_name(credentials_name: str, db: Session) -> RepoCredentialsModel | None:
+    orm_cred = db.query(Credentials).filter(
+        Credentials.name == credentials_name).first()
+    return RepoCredentialsModel(**orm_cred.as_dict()) if orm_cred else None
 
 
-def get_index_values(db: Session) -> list[dict[str, str | None]]:
+async def get_index_values(db: Session) -> list[dict[str, str | None]]:
     return [entry.as_dict() for entry in db.query(Index).all()]
 
 
-def validate_uniqueness_index_entry(repo_id: int, db: Session) -> bool:
+async def validate_uniqueness_index_entry(repo_id: int, db: Session) -> bool:
     existing_index = db.query(Index).filter(Index.repo_id == repo_id).first()
     return existing_index is None
 
 
-def fetch_index_new_entries(db: Session, auth_key: bytes) -> Iterator[NewIndexEntryModel]:
+async def fetch_index_new_entries(db: Session, auth_key: bytes) -> AsyncIterator[NewIndexEntryModel]:
     for entry in db.query(Repos).all():
-        if not validate_uniqueness_index_entry(entry.id, db):
+        # ensure uniqueness
+        if not await validate_uniqueness_index_entry(entry.id, db):
             continue
 
         cred = None
         if entry.credentials_name:
-            cred = get_credentials_by_name(entry.credentials_name, db)
+            cred = await get_credentials_by_name(entry.credentials_name, db)
             if not cred:
                 raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
                                     detail=f"Credentials for {entry.credentials_name} not found")
@@ -118,12 +146,12 @@ def fetch_index_new_entries(db: Session, auth_key: bytes) -> Iterator[NewIndexEn
 
 async def rescan_index_values(force: bool, db: Session, auth_key: bytes):
     new_index_entries = fetch_index_new_entries(db, auth_key)
-    for entry in new_index_entries:
+    async for entry in new_index_entries:
         table_entry = Index(repo_id=entry.repo_id, compose_path=entry.compose_path,
                             indexed_at=datetime.now(timezone.utc), updated_at=datetime.now(timezone.utc))
         try:
             existing_index = db.query(Index).filter(
-                Index.repo_id == table_entry.id).first()
+                Index.repo_id == table_entry.repo_id).first()
             if existing_index:
                 if force:
                     existing_index.compose_path = table_entry.compose_path
