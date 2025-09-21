@@ -1,0 +1,12 @@
+.menu {
+  /* let the parent determine height; use 100% so it fills the left column */
+  height: 100%;
+  background: #B1B2B5FF;
+  border-radius: 20px;
+  flex-shrink: 0;
+  padding: 12px;
+  display: flex;
+  flex-direction: column !important;
+  /* enforce vertical stacking */
+  gap: 8px;
+}

@@ -1,0 +1,47 @@
+.layout-row {
+    position: relative;
+    width: 100%;
+    border-radius: 0px 0px 0px 0px;
+    overflow: hidden;
+    display: flex;
+    align-items: stretch;
+    /* stretch columns vertically */
+    align-content: stretch;
+    justify-content: start;
+    gap: 20px;
+    flex-direction: row;
+    flex-wrap: nowrap;
+    flex: 1 1 auto;
+    /* take remaining vertical space */
+    min-height: 0;
+    /* allow children to shrink and scroll */
+    margin: 0;
+}
+
+.left-col {
+    flex: 0 0 500px;
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+    min-height: 0;
+    /* allow children to scroll inside */
+}
+
+.right-col {
+    flex: 1 1 auto;
+    min-height: 0;
+    /* allow the column to fit inside the viewport and let children manage scroll */
+    background: rgba(255, 255, 255, 0.02);
+    padding: 16px;
+    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    align-items: stretch;
+    overflow: auto;
+}
+
+.contentTitle {
+    font-size: 24px;
+    padding: 4px;
+}

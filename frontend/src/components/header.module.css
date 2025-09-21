@@ -1,0 +1,26 @@
+.headerBox {
+  position: relative;
+  width: 100%;
+  border-radius: 0px 0px 0px 0px;
+  display: flex;
+  align-items: center;
+  align-content: stretch;
+  justify-content: start;
+  padding: 0px 0px 0px 0px;
+  flex-direction: row;
+  flex-wrap: nowrap;
+  flex: 0 0 auto;
+  /* header should not grow; keep at its natural height */
+  align-self: stretch;
+}
+
+.headerText {
+  color: rgba(255, 255, 255, 1);
+  text-transform: none;
+  line-break: auto;
+  overflow-wrap: initial;
+  white-space: break-spaces;
+  font-size: 60px;
+  text-rendering: geometricPrecision;
+  margin: 10px 0px;
+}

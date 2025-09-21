@@ -36,7 +36,7 @@ async def add_repo(new_repo: CreateNewRepoModel, db: Session = Depends(get_db)) 
     "/repos/{repo_id}",
     name="indexer:edit-repo",
 )
-async def edit_repo(repo_id: str, repo: CreateNewRepoModel, db: Session = Depends(get_db)) -> RepositoryModel:
+async def edit_repo(repo_id: str, repo: CreateNewRepoModel, db: Session = Depends(get_db)) -> IndexerResponseModel:
     """
     Edit an existing repository to be indexed.
 
@@ -56,7 +56,7 @@ async def edit_repo(repo_id: str, repo: CreateNewRepoModel, db: Session = Depend
     except HTTPException as exc:
         raise HTTPException(status_code=exc.status_code, detail=exc.detail)
 
-    return RepositoryModel(**existing_repo.as_dict())
+    return IndexerResponseModel(status=status.HTTP_200_OK, message="RepositoryModel edited successfully")
 
 
 @router.delete(
