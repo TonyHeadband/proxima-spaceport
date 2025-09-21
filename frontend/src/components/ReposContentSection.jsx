@@ -9,7 +9,7 @@ function formatDate(iso) {
     if (!iso) return ''
     try {
         const d = new Date(iso)
-        return d.toLocaleString()
+        return d.toLocaleString('en-US', { timeZone: 'America/Toronto', timeZoneName: 'short' })
     } catch (e) {
         return iso
     }
@@ -21,6 +21,7 @@ export default function ReposContentSection() {
     const [error, setError] = React.useState(null)
     const [showNewRow, setShowNewRow] = React.useState(false)
     const [showActions, setShowActions] = React.useState(false)
+    const [editingId, setEditingId] = React.useState(null)
 
     React.useEffect(() => {
         let mounted = true
@@ -79,20 +80,14 @@ export default function ReposContentSection() {
                     </thead>
                     <tbody>
                         {repos.map((r) => (
-                            <tr key={r.id}>
-                                <td className={styles.nameCell}>{r.name}</td>
-                                <td className={styles.urlCell} title={r.url}>{r.url}</td>
-                                <td className={styles.branchCell}>{r.branch}</td>
-                                <td className={styles.composeCell}>{r.compose_folder || '—'}</td>
-                                <td className={styles.credentialsCell}>{r.credentials_name || '—'}</td>
-                                {!showActions && <td>{formatDate(r.indexed_at) || '—'}</td>}
-                                {!showActions && <td>{formatDate(r.updated_at) || '—'}</td>}
-                                {showActions && <td className={styles.actionsCell}>
-                                    <div className={styles.rowActions}>
-                                        <EditRowComponent showActions={showActions} repo={r} />
-                                    </div>
-                                </td>}
-                            </tr>
+                            <RowComponent
+                                key={r.id}
+                                repo={r}
+                                editingId={editingId}
+                                setEditingId={setEditingId}
+                                setRepos={setRepos}
+                                showActions={showActions}
+                            />
                         ))}
                         {showNewRow && (
                             <NewRowComponent showActions={showActions} setShowNewRow={setShowNewRow} setRepos={setRepos} />
@@ -102,7 +97,7 @@ export default function ReposContentSection() {
             </div>
 
             <div className={styles.actionArea}>
-                {(showActions && !showNewRow) && (
+                {(showActions && !showNewRow && !editingId) && (
                     <Button
                         label={'Add Repository'}
                         className={`${styles.actionButton} ${styles.actionButtonVar01}`}
@@ -121,24 +116,113 @@ export default function ReposContentSection() {
     )
 }
 
-function EditRowComponent({ showActions, repo }) {
-    if (!showActions) return '—'
+function RowComponent({ repo, editingId, setEditingId, setRepos, showActions }) {
+    const isEditing = editingId === repo.id
+
+    const [form, setForm] = React.useState({
+        name: repo.name || '',
+        url: repo.url || '',
+        branch: repo.branch || 'main',
+        compose_folder: repo.compose_folder || '',
+        credentials_name: repo.credentials_name || '',
+    })
+    const [submitting, setSubmitting] = React.useState(false)
+
+    React.useEffect(() => {
+        // sync form when editing begins or repo changes
+        setForm({
+            name: repo.name || '',
+            url: repo.url || '',
+            branch: repo.branch || 'main',
+            compose_folder: repo.compose_folder || '',
+            credentials_name: repo.credentials_name || '',
+        })
+    }, [isEditing, repo])
+
+    const onChange = (e) => {
+        const { name, value } = e.target
+        setForm((s) => ({ ...s, [name]: value }))
+    }
+
+    const onStartEdit = () => setEditingId(repo.id)
+
+    const onDelete = async () => {
+        if (!window.confirm(`Are you sure you want to delete the repository "${repo.name}"? This action cannot be undone.`)) return
+        try {
+            await indexer.DeleteRepository(repo.id)
+            setRepos((prev) => prev.filter((p) => p.id !== repo.id))
+        } catch (err) {
+            console.error('Error deleting repository:', err)
+        }
+    }
+
+    const onConfirm = async () => {
+        setSubmitting(true)
+        try {
+            const payload = { ...form }
+            const updated = await indexer.EditRepository(repo.id, payload)
+            // Prefer server-returned object to populate authoritative fields.
+            console.log('Updated repo from server:', updated)
+            if (updated) {
+                setRepos((prev) => prev.map((p) => (p.id === repo.id ? { ...p, ...updated } : p)))
+            }
+            setEditingId(null)
+        } catch (err) {
+            console.error('Failed to update repo', err)
+            alert('Failed to save changes — check console for details')
+        } finally {
+            setSubmitting(false)
+        }
+    }
+
+    const onCancel = () => setEditingId(null)
+
+    if (!isEditing) {
+        return (
+            <tr>
+                <td className={styles.nameCell}>{repo.name}</td>
+                <td className={styles.urlCell} title={repo.url}>{repo.url}</td>
+                <td className={styles.branchCell}>{repo.branch}</td>
+                <td className={styles.composeCell}>{repo.compose_folder || '—'}</td>
+                <td className={styles.credentialsCell}>{repo.credentials_name || '—'}</td>
+                {!showActions && <td>{formatDate(repo.indexed_at) || '—'}</td>}
+                {!showActions && <td>{formatDate(repo.updated_at) || '—'}</td>}
+                {showActions && <td className={styles.actionsCell}>
+                    <div className={styles.rowActions}>
+                        <Button label="Edit" className={`${styles.smallButton}`} type="button" onClick={onStartEdit} />
+                        <Button label="Delete" className={`${styles.smallButton} ${styles.warningButton}`} type="button" onClick={onDelete} />
+                    </div>
+                </td>}
+            </tr>
+        )
+    }
 
     return (
-        <>
-            <Button
-                label="Edit"
-                type="button"
-                className={styles.smallButton}
-                onClick={() => console.log('edit', repo.id)}
-            />
-            <Button
-                label="Delete"
-                className={`${styles.smallButton} ${styles.warningButton}`}
-                type="button"
-                onClick={() => console.log('delete', repo.id)}
-            />
-        </>
+        <tr className={styles.newRow} key={`edit-${repo.id}`}>
+            <td>
+                <input name="name" value={form.name} onChange={onChange} className={styles.inlineInput} />
+            </td>
+            <td>
+                <input name="url" value={form.url} onChange={onChange} className={styles.inlineInput} />
+            </td>
+            <td>
+                <input name="branch" value={form.branch} onChange={onChange} className={styles.inlineInput} />
+            </td>
+            <td>
+                <input name="compose_folder" value={form.compose_folder} onChange={onChange} className={styles.inlineInput} />
+            </td>
+            <td>
+                <input name="credentials_name" value={form.credentials_name} onChange={onChange} className={styles.inlineInput} />
+            </td>
+            {!showActions && <td>—</td>}
+            {!showActions && <td>—</td>}
+            <td className={styles.actionsCell}>
+                <div className={styles.newRowActions}>
+                    <Button label={submitting ? 'Saving…' : 'Confirm'} className={styles.smallButton} onClick={onConfirm} disabled={submitting} />
+                    <Button label="Cancel" className={styles.smallButton01} onClick={onCancel} />
+                </div>
+            </td>
+        </tr>
     )
 }
 
