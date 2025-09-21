@@ -30,5 +30,35 @@ export const addNewRepository = async (repositoryData, options = {}) => {
     }
 }
 
-const indexer = { fetchRepositories, addNewRepository }
+// EditRepository accepts an optional AbortSignal via options and returns the data
+export const EditRepository = async (id, repositoryData, options = {}) => {
+    const { signal } = options
+    try {
+        console.log(`Editing repository ${id} via API…`, repositoryData)
+        const response = await api.put(`${INDEXER_ROUTES.repos.url}/${id}`, repositoryData, { signal })
+        // return the raw data (array) to the caller
+        return response.data
+    } catch (error) {
+        // surface network/errors to caller
+        console.error('Error editing repository:', error)
+        throw error
+    }
+}
+
+// DeleteRepository accepts an optional AbortSignal via options and returns the data
+export const DeleteRepository = async (id, options = {}) => {
+    const { signal } = options  
+    try {
+        console.log(`Deleting repository ${id} via API…`)
+        const response = await api.delete(`${INDEXER_ROUTES.repos.url}/${id}`, { signal })
+        // return the raw data (array) to the caller
+        return response.data
+    } catch (error) {
+        // surface network/errors to caller
+        console.error('Error deleting repository:', error)
+        throw error
+    }
+}
+
+const indexer = { fetchRepositories, addNewRepository, EditRepository, DeleteRepository }
 export default indexer
